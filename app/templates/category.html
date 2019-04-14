@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Categories:</h2>
+<form action="/category/edit/{{category.CategoryID}}" method="POST" name="category">
+  <p>Category Name</p> <p><input type="text" id="name" name="name" value="{{category.CategoryName}}" size="20" maxlength="20" required /></p>
+  <p>Category Description</p> <p><input type="text" id="description" name="description" {% if category.CategoryDescription %}value="{{category.CategoryDescription}}"{% endif %} size="50" maxlength="50" /></p>
+  <p>Father Category</p> 
+  <p><select id="father" name="father">
+    <option value=0>None</option>
+    {% for value,name in categories %}
+    <option value={{value}}>{{name}}</option>
+    {% endfor %}
+  </select></p>
+  <p><input id="submit" name="submit" type="submit" value="Submit"></p>
+</form>
+{% endblock %}
+
+{% block js %}
+<script>
+select = document.getElementById("father");
+select.options[0].selected = true;
+for(var i=0; i<select.options.length; i++){
+    if(select.options[i].value == {{ category.FatherCategoryID }}){  
+        select.options[i].selected = true;  
+        break;  
+    }
+}
+</script>
+{% endblock %}

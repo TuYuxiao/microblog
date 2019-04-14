@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% for user,follow,fan,is_follow in users %}
+    <a href="{{ url_for('users', user_id=user.UserID) }}" style="color:#4499EE"> {{ user.UserName }} </a> &nbsp;&nbsp;&nbsp; 
+    <font size="2">{% if is_follow %}<a href="javascript:;" style="color:red" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% else %}<a href="javascript:;" style="color:black" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% endif %}</font>
+    <br>
+    <font size="2">Follows {{follow}} | Fans {{fan}} | Blogs {{blogs}}<br>Self-Description: {{user.UserSelfDescription}}</font>
+    <hr/>
+{% endfor %}
+{% endblock %}
+
+{% block js %}
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script>
+function follow(element){
+    if (element.style.color == "red"){
+        element.style = "color:black";
+        $.get("/user/unsubscribe/"+element.getAttribute('user'));
+    }
+    else{
+        element.style = "color:red";
+        $.get("/user/subscribe/"+element.getAttribute('user'));
+    }
+}
+</script>
+{% endblock %}

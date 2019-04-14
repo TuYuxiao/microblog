@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style type="text/css">
+table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+             
+td {
+  border: 1px solid #ddd;
+  word-break: break-word;
+  width: 300px;
+}
+</style>
+
+<h2>Categories:</h2>
+<table>
+  <tr><td align="center">Category Name</td><td align="center">Category Description</td><td align="center">Father Category</td><td align="center">DELETE</td></tr>
+  {% for category in categories %}
+    <tr>
+      <td align="center"><a href="{{url_for('edit_category',category_id=category.CategoryID)}}">{{category.CategoryName}}</a></td>
+      <td align="center">{% if category.CategoryDescription %}{{category.CategoryDescription}}{% endif %}</td>
+      <td align="center">{% if category.FatherCategoryID %}{{ id_name_dict[category.FatherCategoryID.__str__()] }}{% else %}None{% endif %}</td>
+      <td align="center"><a href="{{url_for('delete_category',category_id=category.CategoryID)}}">[DELETE]</a></td>
+    </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}
+

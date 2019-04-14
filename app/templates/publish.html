@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action={% if blog %}"{{ url_for('publish',blog_id=blog.BlogID) }}"{% else %}"{{ url_for('publish') }}"{% endif %} method="POST" name="publish">
+    {{ form.hidden_tag() }}
+<p>Title:</p><p>{{ form.title }}</p>
+<p>Content:</p><p>{{ form.content }}</p>
+<p>Label:</p><p>{{ form.label }}</p>
+<p>Category:</p>
+<p><select id="category" multiple name="category">
+{% for value,name in categories %}
+<option value={{value}}>{{name}}</option>
+{% endfor %}
+</select></p>
+<p>{{ form.submit }}</p>
+
+</form>
+{% endblock %}
+
+{% block js %}
+<script>
+{% if blog %}
+title = document.getElementById("title");
+title.value="{{ blog.BlogTitle }}";
+content = document.getElementById("content");
+content.value="{{ blog.BlogContent }}";
+{% endif %}
+{% if label %}
+label = document.getElementById("label");
+label.value = "{{ label }}";
+{% endif %}
+{% if category %}
+select = document.getElementById("category");
+for(var i=0; i<select.options.length; i++){
+    {% for c in category %}
+    if(select.options[i].value == {{ c }}){  
+        select.options[i].selected = true;  
+        continue;  
+    }
+    {% endfor %}
+}  
+{% endif %}
+</script>
+{% endblock %}

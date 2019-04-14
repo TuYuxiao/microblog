@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %} 
+
+{% if blog %}
+<h1> {{ blog.BlogTitle }} </h1>
+<p>Auther: <a href="{{ url_for('users', user_id=blog.PublisherID) }}">{{auther}}</a></p>
+<p> {{ blog.BlogContent }} </p>
+{% endif %}
+
+<font size="4"><a href="javascript:;" {% if is_like_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_blog(this)">Likes</a>: <div id="blog"  style="display:inline;">{{num_likes}}</div>&nbsp;&nbsp;Views: {{blog.PageViews}}</font>
+<br><br>
+<font size="3"><a href="#" onclick="reply({{0}})">Publish Comment</a></font>
+
+<h2> Comments: </h2> 
+{% if comment_form %}
+<div id="comment" style="display:block;">
+    <form action="{{ url_for('comment', user_id=current_user.UserID, blog_id=blog.BlogID) }}" method="POST">
+        {{ comment_form.hidden_tag() }}
+        {{ comment_form.content }}
+        <input type="hidden" id="replyid" name="replyid" value=0 />
+        {{ comment_form.submit }}
+    </form>
+</div>
+{% endif %}
+
+{% if root%}
+    {% if root.children.__len__() != 0 %} <hr/> {% endif %}
+    {% for child in root.children %}
+        <p><a href="{{ url_for('users', user_id=child.comment.CommenterID) }}" style="color:#4499EE"> {{ child.name }} </a><br>
+        <font size="2">{{ child.comment.CommentDate }}<br><a href="javascript:;" {% if child.is_like %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_comment(this)" comment="{{child.comment.CommentID}}">likes</a>&nbsp;<nobr id="{{child.comment.CommentID}}">{{child.num_likes}}</nobr>&nbsp;&nbsp;{% if child.comment.CommenterID!=current_user.UserID %}<a href="#" onclick="reply({{child.comment.CommentID}})">reply</a>{% else %}<a href="{{url_for('delete_comment',comment_id=child.comment.CommentID)}}">delete</a>{% endif %}</font></p>
+        <p> {{ child.comment.CommentContent }} </p>
+        {% for c in child.children %}
+            <p>&nbsp;&nbsp;&nbsp;&nbsp; <a href="{{ url_for('users', user_id=c.comment.CommenterID) }}" style="color:#4499EE"> {{ c.name }} </a><font size="2", style="color:#808080">reply {{c.father_name}}</font> : {{ c.comment.CommentContent }} <br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <font size="2">{{ c.comment.CommentDate }}&nbsp;&nbsp; <a href="javascript:;" {% if c.is_like %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_comment(this)" comment="{{c.comment.CommentID}}">likes</a>&nbsp;<nobr id="{{c.comment.CommentID}}">{{c.num_likes}}</nobr>&nbsp;&nbsp;{% if c.comment.CommenterID!=current_user.UserID %}<a href="#" onclick="reply({{c.comment.CommentID}})">reply</a>{% else %}<a href="{{url_for('delete_comment',comment_id=c.comment.CommentID)}}">delete</a>{% endif %}</font></p>
+        {% endfor %}
+        <hr />
+    {% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block js %}
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script>
+function reply(comment_id) {
+    target = document.getElementById("comment");
+    target.style.display = "none";
+    setTimeout(show,50);
+    replyid = document.getElementById("replyid");
+    replyid.value = comment_id;
+}
+function show() {
+    target = document.getElementById("comment");
+    target.style.display = "block";
+    document.getElementById("content").focus();
+}
+function like_blog(element){
+    if (element.style.color == "red"){
+        $.get("/blog/unlike/{{blog.BlogID}}",function(data){
+            if(data=="success"){
+                target = document.getElementById("blog");
+                target.innerHTML=parseInt(target.innerHTML)-1;
+                element.style = "color:black";
+            }
+        });
+    }
+    else{
+        $.get("/blog/like/{{blog.BlogID}}",function(data){
+            if(data=="success"){
+                target = document.getElementById("blog");
+                target.innerHTML=parseInt(target.innerHTML)+1;
+                element.style = "color:red";
+            }
+        });
+    }
+}
+function like_comment(element){
+    if (element.style.color == "red"){
+        $.get("/comment/unlike/"+element.getAttribute('comment'),function(data){
+            if(data=="success"){
+                target = document.getElementById(element.getAttribute('comment'));
+                target.innerHTML=parseInt(target.innerHTML)-1;
+                element.style = "color:black";
+            }
+        });
+    }
+    else{
+        $.get("/comment/like/"+element.getAttribute('comment'),function(data){
+            if(data=="success"){
+                target = document.getElementById(element.getAttribute('comment'));
+                target.innerHTML=parseInt(target.innerHTML)+1;
+                element.style = "color:red";
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p>Name: {{ user.UserName }} {% if user.UserID != current_user.UserID %} &nbsp;&nbsp;&nbsp; <font size=2>{% if is_follow %}<a href="javascript:;" style="color:red" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% else %}<a href="javascript:;" style="color:black" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% endif %}</font> {% endif %}</p>
+<p>Email: {{ user.UserEmail }}</p>
+
+{% if user.UserID == current_user.UserID %}
+  {% if user.UserSelfDescription %}
+  <p onclick="about_me()">about me: {{ user.UserSelfDescription }}</p>
+  {% else %}
+  <p style="color:#4499EE;" onclick="about_me()">about me: I'm a person. ---- this info from the system.</p>
+  {% endif %}
+  <div id="aboutMe" style="display:none;">
+    <form action="{{ url_for('about_me', user_id=current_user.UserID) }}" method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.describe }}
+        {{ form.submit }}
+    </form>
+  </div>
+  {% if user.UserAge %}
+    <p onclick="age()">Age: {{user.UserAge}}</p>
+  {% else %}
+    <p onclick="age()">Age: unknown</p>
+  {% endif %}
+  <div id="age" style="display:none;">
+    <form action="{{ url_for('age', user_id=current_user.UserID) }}" method="POST">
+      {{ age.hidden_tag() }}
+      {{ age.age }}
+      {{ age.submit }}
+    </form>
+  </div>
+{% else %}
+  {% if user.UserSelfDescription %}
+    <p>about me: {{ user.UserSelfDescription }}</p>
+  {% else %}
+    <p style="color:#4499EE;">about me: I'm a person. ---- this info from the system.</p>
+  {% endif %}
+  {% if user.UserAge %}
+    <p onclick="age()">Age: {{user.UserAge}}</p>
+  {% else %}
+    <p onclick="age()">Age: unknown</p>
+  {% endif %}
+{% endif %}
+
+<p>Follows:&nbsp;<a href="{{url_for('user_follows',user_id=user.UserID)}}">{{follows}}</a>&nbsp;&nbsp;&nbsp;Fans:&nbsp;<a href="{{url_for('user_fans',user_id=user.UserID)}}">{{fans}}</a></p>
+
+{% if user.UserID == current_user.UserID %}
+<p style="color:#4c4c4c;">last log: {{ user.LastLoginTime.strftime("%a, %d %b %Y %H:%M:%S") }}</p>
+
+<a href="{{ url_for('publish') }}">Want to publish blogs?</a>
+{% endif %}
+
+<hr />
+{% if pagination %}
+    {% for blog,comments,likes in pagination.items %}
+    <a href="{{ url_for('blog', blog_id=blog.BlogID) }}" style="color:#ff0000;">{{ blog.BlogTitle }}</a>
+    {% if user.UserID == current_user.UserID %}&nbsp;&nbsp;&nbsp;<font size=2><a href="{{url_for('publish',blog_id=blog.BlogID)}}" style="color:black">[EDIT]</a>&nbsp;&nbsp;<a href="{{url_for('delete_blog',blog_id=blog.BlogID,page=pagination.page)}}" style="color:black">[DELETE]</a></font>{% endif %}
+    <p style="color:#ff6600;">{{ blog.BlogContent[:100]+"..." }}</p>
+    <font size="2"><p style="color:#4c4c4c;">Views:{{blog.PageViews}} | Comments:{{comments}} | Likes:{{likes}} | {{ blog.PublishDate }}</p></font>
+    <hr />
+    {% endfor %}
+
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('users', user_id=current_user.UserID, page=pagination.prev_num) }}"><< prev</a>
+    {% else %}
+    << None
+    {% endif %} | 
+    {% if pagination.has_next %}
+    <a href="{{ url_for('users', user_id=current_user.UserID, page=pagination.next_num) }}">next >></a>
+    {% else %}
+    None >>
+    {% endif %}
+
+{% else %}
+    <p style="color:blue;">the guy is so lazy.....</p>
+{% endif %}
+
+
+{% endblock %}
+
+{% block js %}
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script>
+function about_me() {
+    target = document.getElementById("aboutMe");
+    if (target.style.display == "block") {
+        target.style.display = "none";
+    } else {
+        target.style.display = "block";
+    }
+}
+function age() {
+    target = document.getElementById("age");
+    if (target.style.display == "block") {
+        target.style.display = "none";
+    } else {
+        target.style.display = "block";
+    }
+}
+function follow(element){
+    if (element.style.color == "red"){
+        element.style = "color:black";
+        $.get("/user/unsubscribe/"+element.getAttribute('user'));
+    }
+    else{
+        element.style = "color:red";
+        $.get("/user/subscribe/"+element.getAttribute('user'));
+    }
+}
+</script>
+{% endblock %}

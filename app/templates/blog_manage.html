@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if pagination %}
+    {% for blog,auther,comments,likes in pagination.items %}
+    <a href="{{ url_for('blog', blog_id=blog.BlogID) }}" style="color:#ff0000;">{{ blog.BlogTitle }}</a>
+    &nbsp;&nbsp;&nbsp;<font size=2><a href="{{url_for('blog_manage_delete',blog_id=blog.BlogID,page=pagination.page)}}" style="color:black">[DELETE]</a></font>
+    <p style="color:#ff6600;">{{ blog.BlogContent[:100]+"..." }}</p>
+    <font size="2"><p style="color:#4c4c4c;">Auther:<a href={{url_for('users', user_id=blog.PublisherID)}}>{{auther}}</a>&nbsp;&nbsp;&nbsp;Views:{{blog.PageViews}} | Comments:{{comments}} | Likes:{{likes}} | {{ blog.PublishDate.strftime("%a, %d %b %Y %H:%M:%S") }}</p></font>
+    <hr />
+    {% endfor %}
+    
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('blog_manage', page=pagination.prev_num) }}"><< prev</a>
+    {% else %}
+    << None
+    {% endif %} | 
+    {% if pagination.has_next %}
+    <a href="{{ url_for('blog_manage', page=pagination.next_num) }}">next >></a>
+    {% else %}
+    None >>
+    {% endif %}
+
+{% else %}
+    <p style="color:blue;">the guy is so lazy.....</p>
+{% endif %}
+{% endblock %}
