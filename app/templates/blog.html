@@ -8,7 +8,7 @@
 <p> {{ blog.BlogContent }} </p>
 {% endif %}
 
-<font size="4">{% if current_user.is_authenticated %}<a href="javascript:;" {% if is_like_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_blog(this)">Likes</a>{% else %}Likes{% endif %}: <div id="blog"  style="display:inline;">{{num_likes}}</div>&nbsp;&nbsp;Views: {{blog.PageViews}}&nbsp;&nbsp;<a href="javascript:;" {% if is_collect_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="collect_blog(this)">Collect</a></font>
+<font size="4">{% if current_user.is_authenticated %}<a href="javascript:;" {% if is_like_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_blog(this)">Likes</a>{% else %}Likes{% endif %}: <div id="blog"  style="display:inline;">{{num_likes}}</div>&nbsp;&nbsp;Views: {{blog.PageViews}}&nbsp;&nbsp;{% if current_user.is_authenticated %}<a href="javascript:;" {% if is_collect_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="collect_blog(this)">Collect</a>{% endif %}</font>
 <br><br>
 <font size="3"><a href="#" onclick="reply({{0}})">Publish Comment</a></font>
 
