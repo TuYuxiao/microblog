@@ -1,0 +1,7 @@
+Flask_Login==0.4.1
+numpy==1.16.1
+Flask_WTF==0.14.2
+WTForms==2.2.1
+Flask==0.12.2
+Faker==1.0.4
+PyMySQL==0.9.3
