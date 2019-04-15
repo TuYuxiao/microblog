@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>Name: {{ user.UserName }} {% if user.UserID != current_user.UserID %} &nbsp;&nbsp;&nbsp; <font size=2>{% if is_follow %}<a href="javascript:;" style="color:red" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% else %}<a href="javascript:;" style="color:black" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% endif %}</font> {% endif %}</p>
+<p>Name: {{ user.UserName }} {% if current_user.is_authenticated and user.UserID != current_user.UserID %} &nbsp;&nbsp;&nbsp; <font size=2>{% if is_follow %}<a href="javascript:;" style="color:red" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% else %}<a href="javascript:;" style="color:black" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% endif %}</font> {% endif %}</p>
 <p>Email: {{ user.UserEmail }}</p>
 
-{% if user.UserID == current_user.UserID %}
+{% if current_user.is_authenticated and user.UserID == current_user.UserID %}
   {% if user.UserSelfDescription %}
   <p onclick="about_me()">about me: {{ user.UserSelfDescription }}</p>
   {% else %}
@@ -44,29 +44,38 @@
 
 <p>Follows:&nbsp;<a href="{{url_for('user_follows',user_id=user.UserID)}}">{{follows}}</a>&nbsp;&nbsp;&nbsp;Fans:&nbsp;<a href="{{url_for('user_fans',user_id=user.UserID)}}">{{fans}}</a></p>
 
-{% if user.UserID == current_user.UserID %}
+{% if current_user.is_authenticated and user.UserID == current_user.UserID %}
 <p style="color:#4c4c4c;">last log: {{ user.LastLoginTime.strftime("%a, %d %b %Y %H:%M:%S") }}</p>
 
 <a href="{{ url_for('publish') }}">Want to publish blogs?</a>
+{% endif %}
+
+{% if categories %}
+<p><select id="category" name="category">
+    <option value=0>ALL</option>
+    {% for c in categories %}
+    <option value={{c.CategoryID}}><a href="{{url_for('index')}}">{{c.CategoryName}}</a></option>
+    {% endfor %}
+ </select>&nbsp;&nbsp;<a href="javascript:void;" onclick="change_category()">ok</a></p>
 {% endif %}
 
 <hr />
 {% if pagination %}
     {% for blog,comments,likes in pagination.items %}
     <a href="{{ url_for('blog', blog_id=blog.BlogID) }}" style="color:#ff0000;">{{ blog.BlogTitle }}</a>
-    {% if user.UserID == current_user.UserID %}&nbsp;&nbsp;&nbsp;<font size=2><a href="{{url_for('publish',blog_id=blog.BlogID)}}" style="color:black">[EDIT]</a>&nbsp;&nbsp;<a href="{{url_for('delete_blog',blog_id=blog.BlogID,page=pagination.page)}}" style="color:black">[DELETE]</a></font>{% endif %}
+    {% if current_user.is_authenticated and user.UserID == current_user.UserID %}&nbsp;&nbsp;&nbsp;<font size=2><a href="{{url_for('publish',blog_id=blog.BlogID)}}" style="color:black">[EDIT]</a>&nbsp;&nbsp;<a href="{{url_for('delete_blog',blog_id=blog.BlogID,page=pagination.page)}}" style="color:black">[DELETE]</a></font>{% endif %}
     <p style="color:#ff6600;">{{ blog.BlogContent[:100]+"..." }}</p>
     <font size="2"><p style="color:#4c4c4c;">Views:{{blog.PageViews}} | Comments:{{comments}} | Likes:{{likes}} | {{ blog.PublishDate }}</p></font>
     <hr />
     {% endfor %}
 
     {% if pagination.has_prev %}
-    <a href="{{ url_for('users', user_id=current_user.UserID, page=pagination.prev_num) }}"><< prev</a>
+    <a href="{{ url_for('users', user_id=user.UserID, page=pagination.prev_num, category=category) }}"><< prev</a>
     {% else %}
     << None
     {% endif %} | 
     {% if pagination.has_next %}
-    <a href="{{ url_for('users', user_id=current_user.UserID, page=pagination.next_num) }}">next >></a>
+    <a href="{{ url_for('users', user_id=user.UserID, page=pagination.next_num, category=category) }}">next >></a>
     {% else %}
     None >>
     {% endif %}
@@ -81,6 +90,13 @@
 {% block js %}
 <script src="http://code.jquery.com/jquery-latest.js"></script>
 <script>
+select = document.getElementById("category");
+for(var i=0; i<select.options.length; i++){
+    if(select.options[i].value == {{category}}){  
+        select.options[i].selected=true;
+        break;  
+    }
+}
 function about_me() {
     target = document.getElementById("aboutMe");
     if (target.style.display == "block") {
@@ -105,6 +121,15 @@ function follow(element){
     else{
         element.style = "color:red";
         $.get("/user/subscribe/"+element.getAttribute('user'));
+    }
+}
+function change_category(){
+    select = document.getElementById("category");
+    for(var i=0; i<select.options.length; i++){
+        if(select.options[i].selected){  
+            window.location.href="/user/{{user.UserID}}/category/"+select.value+"/page/{{pagination.page}}"; 
+            break;  
+        }
     }
 }
 </script>

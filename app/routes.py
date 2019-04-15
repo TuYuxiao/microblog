@@ -6,14 +6,15 @@ Created on Fri Apr  5 22:15:56 2019
 @author: tuyuxiao
 """
 
-import datetime,os,shutil
+import datetime,os
 from app import app,db,lm
-from flask import render_template, flash, redirect, url_for, request, send_from_directory
+from flask import render_template, flash, redirect, url_for, request
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from werkzeug import secure_filename
-from app.models import User,Follow,Category,Blog,Comment,BlogLabel,BlogCategory,BlogLike,CommentLike
-from .forms import LoginForm,SignUpForm,AboutMeForm,PublishBlogForm,UploadForm,NameForm,CommentForm,AgeForm
-PER_PAGE=3
+from app.models import User,Follow,Category,Blog,Comment,BlogLabel,BlogCategory,BlogLike,CommentLike,Collection
+from .forms import LoginForm,SignUpForm,AboutMeForm,PublishBlogForm,CommentForm,AgeForm
+from numpy.random import randint
+
+PER_PAGE = 5
 
 LOCAL_DIR = os.getcwd()
 
@@ -25,25 +26,41 @@ def load_user(user_id):
 @app.route('/index')
 def index():
     if current_user.is_authenticated:
-        blogs = User.query.execute("SELECT * FROM Blog WHERE PublisherID in "+
+        blogs = Blog.query.execute("SELECT * FROM Blog WHERE PublisherID in "+
                                    "(SELECT BeFollowedID FROM Follow WHERE FollowerID ="+str(current_user.UserID)
                                    +") ORDER BY PublishDate DESC LIMIT 10")
-        blogs = [Blog(*blog) for blog in blogs]
-        infos = []
-        for blog in blogs:
-            auther = User.query.execute("SELECT UserName FROM User WHERE UserID="+str(blog.PublisherID))[0][0]
-            comments = Comment.query.filter_by(BlogID=blog.BlogID,count=True)
-            likes = BlogLike.query.filter_by(BlogID=blog.BlogID,count=True)
-            infos.append((blog,auther,comments,likes))
-        return render_template('index.html',title='Home',infos=infos)
-    
-    return render_template('index.html',title='Home')
+    else:
+        blogs = Blog.query.execute("SELECT * FROM Blog WHERE BlogID IN (SELECT b.* FROM" +
+                                    "(SELECT BlogID FROM BlogLike GROUP BY BlogID ORDER BY COUNT(*) DESC LIMIT 10) as b)")
+    blogs = [Blog(*blog) for blog in blogs]
+    infos = []
+    for blog in blogs:
+        auther = User.query.execute("SELECT UserName FROM User WHERE UserID="+str(blog.PublisherID))[0][0]
+        comments = Comment.query.filter_by(BlogID=blog.BlogID,count=True)
+        likes = BlogLike.query.filter_by(BlogID=blog.BlogID,count=True)
+        infos.append((blog,auther,comments,likes))
+    return render_template('index.html',title='Home',infos=infos,random=False)
+
+@app.route('/index/random')
+def random():
+    maximum, minimum = Blog.query.execute("SELECT MAX(BlogID) FROM Blog")[0][0], Blog.query.execute("SELECT MIN(BlogID) FROM Blog")[0][0]
+    blogs=[]
+    for i in range(10):
+        blog = Blog.query.execute("SELECT * FROM Blog WHERE BlogID >= "+str(randint(high=maximum+1,low=minimum))+" LIMIT 1")
+        blogs.append(Blog(*blog[0]))
+    infos = []
+    for blog in blogs:
+        auther = User.query.execute("SELECT UserName FROM User WHERE UserID="+str(blog.PublisherID))[0][0]
+        comments = Comment.query.filter_by(BlogID=blog.BlogID,count=True)
+        likes = BlogLike.query.filter_by(BlogID=blog.BlogID,count=True)
+        infos.append((blog,auther,comments,likes))
+    return render_template('index.html',title='Home',infos=infos,random=True)
+
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
-    # 验证用户是否被验证
     if current_user.is_authenticated:
         return redirect('index')
-    # 注册验证
+    
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(UserEmail = request.form.get('email'))
@@ -105,10 +122,10 @@ def sign_up():
         "sign_up.html",
         form=form)
 
-@app.route('/user/<int:user_id>', defaults={'page':1}, methods=["POST", "GET"])
-@app.route('/user/<int:user_id>/page/<int:page>', methods=['GET', 'POST'])
-@login_required
-def users(user_id,page):
+@app.route('/user/<int:user_id>', defaults={'page':1,'category':0}, methods=["POST", "GET"])
+@app.route('/user/<int:user_id>/page/<int:page>', defaults={'category':0}, methods=['GET', 'POST'])
+@app.route('/user/<int:user_id>/category/<int:category>/page/<int:page>', methods=['GET', 'POST'])
+def users(user_id,page,category):
     form = AboutMeForm()
     age = AgeForm()
     user = User.query.get(user_id)
@@ -116,10 +133,16 @@ def users(user_id,page):
         flash("The user is not exist.")
         redirect("/index")
     is_follow=False
-    if user.UserID != current_user.UserID:
-        is_follow = len(Follow.query.filter_by(FollowerID=current_user.UserID,BeFollowedID=user_id)) > 0
+    if current_user.is_authenticated:
+        if user.UserID != current_user.UserID:
+            is_follow = len(Follow.query.filter_by(FollowerID=current_user.UserID,BeFollowedID=user_id)) > 0
 
-    pagination = Blog.query.order_by('PublishDate',desc=True).paginate(page, PER_PAGE, PublisherID = user.UserID)
+    blogs = BlogCategory.query.execute("SELECT BlogID FROM BlogCategory WHERE CategoryID="+str(category))
+    if category == 0:
+        pagination = Blog.query.order_by('PublishDate',desc=True).paginate(page, PER_PAGE, PublisherID = user.UserID)
+    else:
+        pagination = Blog.query.order_by('PublishDate',desc=True).paginate_in(page, 
+                                        PER_PAGE, "BlogID", [blog[0] for blog in blogs],PublisherID = user.UserID)
     items = []
     for blog in pagination.items:
         comments = Comment.query.filter_by(BlogID=blog.BlogID,count=True)
@@ -129,19 +152,22 @@ def users(user_id,page):
     
     follows = Follow.query.filter_by(FollowerID=user.UserID,count=True)
     fans = Follow.query.filter_by(BeFollowedID=user.UserID,count=True)
-
+    categories = Category.query.all()
     return render_template(
         "user.html",
         form=form,
         age=age,
         user=user,
-        pagination=pagination,follows=follows,fans=fans,is_follow=is_follow)
+        pagination=pagination,follows=follows,fans=fans,is_follow=is_follow,
+        categories=categories,category=category)
  
 @app.route('/user/fan/<int:user_id>', methods=["POST", "GET"])
-@login_required
 def user_fans(user_id):
     followers = Follow.query.filter_by(BeFollowedID=user_id)
-    current_user_followed = Follow.query.filter_by(FollowerID=current_user.UserID)
+    if current_user.is_authenticated:
+        current_user_followed = Follow.query.filter_by(FollowerID=current_user.UserID)
+    else:
+        current_user_followed = []
     current_user_followed = [follow.BeFollowedID for follow in current_user_followed]
     blogs = []
     fans = []
@@ -156,10 +182,12 @@ def user_fans(user_id):
         blogs=len(blogs))
     
 @app.route('/user/follow/<int:user_id>', methods=["POST", "GET"])
-@login_required
 def user_follows(user_id):
     followed = Follow.query.filter_by(FollowerID=user_id)
-    current_user_followed = Follow.query.filter_by(FollowerID=current_user.UserID)
+    if current_user.is_authenticated:
+        current_user_followed = Follow.query.filter_by(FollowerID=current_user.UserID)
+    else:
+        current_user_followed = []
     current_user_followed = [follow.BeFollowedID for follow in current_user_followed]
     blogs = []
     follows = []
@@ -347,8 +375,9 @@ def buildCommentTree(comments):
             self.num_likes = 0
             if comment:
                 self.name = User.query.execute("SELECT UserName FROM User WHERE UserID="+str(comment.CommenterID))[0][0]
-                self.is_like = len(CommentLike.query.filter_by(UserID=current_user.UserID,CommentID=comment.CommentID))>0
                 self.num_likes = CommentLike.query.filter_by(CommentID=comment.CommentID,count=True)
+                if current_user.is_authenticated:
+                    self.is_like = len(CommentLike.query.filter_by(UserID=current_user.UserID,CommentID=comment.CommentID))>0
     
     root = Node(None)
     d = {}
@@ -421,15 +450,30 @@ def unlike_comment(comment_id):
         return "fail"
 
 @app.route('/blog/<int:blog_id>', methods=["POST", "GET"])
-@login_required
 def blog(blog_id):
     blog = Blog.query.get(blog_id)
     if not blog:
         return redirect("/index")
-    if(current_user.UserID != blog.PublisherID):
+    if current_user.is_authenticated:
+        if(current_user.UserID != blog.PublisherID):
+            blog.PageViews = blog.PageViews + 1
+        is_like_blog = len(BlogLike.query.filter_by(UserID=current_user.UserID,BlogID=blog_id))>0
+        is_collect_blog = len(Collection.query.filter_by(UserID=current_user.UserID,BlogID=blog_id))>0
+    else:
         blog.PageViews = blog.PageViews + 1
-    auther =User.query.execute("SELECT UserName FROM User WHERE UserID="+str(blog.PublisherID))[0][0]
-    is_like_blog = len(BlogLike.query.filter_by(UserID=current_user.UserID,BlogID=blog_id))>0
+        is_like_blog = False
+        is_collect_blog = False
+    auther = User.query.execute("SELECT UserName FROM User WHERE UserID="+str(blog.PublisherID))[0][0]
+    categories = ""
+    labels = ""
+    for category in BlogCategory.query.filter_by(BlogID=blog_id):
+        categories += Category.query.get(category.CategoryID).CategoryName + ", "
+    for label in BlogLabel.query.filter_by(BlogID=blog_id):
+        labels += label.LabelName + ", "
+    if categories != "":
+        categories = categories[:-2]
+    if labels != "":
+        labels = labels[:-2]
     num_likes = BlogLike.query.filter_by(BlogID=blog_id,count=True)
     comments = Comment.query.filter_by(BlogID=blog_id)
     root = buildCommentTree(comments)
@@ -441,7 +485,8 @@ def blog(blog_id):
         comment_form=comment,
         num_likes=num_likes,
         is_like_blog=is_like_blog,
-        auther=auther)
+        is_collect_blog=is_collect_blog,
+        auther=auther,categories=categories,labels=labels)
     
 @app.route('/blog/delete/<int:blog_id>/<int:page>', methods=["POST", "GET"])
 @login_required
@@ -608,3 +653,54 @@ def delete_category(category_id):
     db.session.delete(category)
     db.session.commit()
     return redirect('/category')
+
+@app.route('/collection',defaults={'page':1}, methods=["POST", "GET"])
+@app.route('/collection/<int:page>', methods=["POST", "GET"])
+@login_required
+def collection(page):
+    blogs = BlogCategory.query.execute("SELECT BlogID FROM Collection WHERE UserID="+str(current_user.UserID))
+    pagination = Blog.query.order_by('PublishDate',desc=True).paginate_in(page, 
+                                        PER_PAGE, "BlogID", [blog[0] for blog in blogs],PublisherID = current_user.UserID)
+    items = []
+    for blog in pagination.items:
+        comments = Comment.query.filter_by(BlogID=blog.BlogID,count=True)
+        likes = BlogLike.query.filter_by(BlogID=blog.BlogID,count=True)
+        items.append((blog,comments,likes))
+    pagination.items = items
+    return render_template(
+        "collection.html",
+        pagination=pagination)
+    
+@app.route('/collection/delete/<int:blog_id>/<int:page>', methods=["POST", "GET"])
+@login_required
+def delete_collection(blog_id, page):
+    collection = Collection.query.filter_by(UserID=current_user.UserID,BlogID=blog_id)
+    if not collection:
+        flash('database error!')
+        return redirect(url_for('collection', page=page))
+    if len(collection)>0:
+        db.session.delete(collection[0])
+        db.session.commit()
+    return redirect(url_for('collection', page=page))
+
+@app.route('/blog/collect/<int:blog_id>', methods=["POST", "GET"])
+@login_required
+def collect_blog(blog_id):
+    collection = Collection(UserID=current_user.UserID,BlogID=blog_id)
+    if db.session.add(collection):
+        db.session.commit()
+        return "success"
+    else:
+        return "fail"
+    
+@app.route('/blog/uncollect/<int:blog_id>', methods=["POST", "GET"])
+@login_required
+def uncollect_blog(blog_id):
+    if len(Collection.query.filter_by(UserID=current_user.UserID,BlogID=blog_id)) == 0:
+        return "fail"
+    collection = Collection(UserID=current_user.UserID,BlogID=blog_id)
+    if db.session.delete(collection):
+        db.session.commit()
+        return "success"
+    else:
+        return "fail"

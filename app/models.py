@@ -28,7 +28,7 @@ class User(UserMixin, db.Model):
     Avator = db.Column(db.String(5000),nullable=True)
     
     def get_id(self):
-        return self.__dict__.get(self.prime_key)
+        return self.__dict__.get(self.prime_key[0])
     def set_passwd(self, passwd):
         self.__setattr__('UserPasswd',self.md5(passwd))
     def check_passwd(self, passwd):
@@ -159,3 +159,16 @@ class CommentLike(db.Model):
             commentLike = CommentLike(UserID = randint(1,numUser+1),CommentID = randint(1,numComment+1))
             db.session.add(commentLike)
         db.session.commit()
+        
+class Collection(db.Model):
+    UserID = db.Column(db.Integer,prime_key=True)
+    BlogID = db.Column(db.Integer,prime_key=True)
+    CollectTime = db.Column(db.TimeStamp,nullable=True)
+    
+    @staticmethod
+    def fake(num,numUser,numBlog):
+        for i in range(num):
+            collection = Collection(UserID = randint(1,numUser+1),BlogID = randint(1,numBlog+1))
+            db.session.add(collection)
+        db.session.commit()
+        

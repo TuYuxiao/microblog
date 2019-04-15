@@ -1,5 +1,6 @@
 use microblog;
 
+DROP TABLE IF EXISTS Collection;
 DROP TABLE IF EXISTS CommentLike;
 DROP TABLE IF EXISTS BlogLike;
 DROP TABLE IF EXISTS BlogLabel;

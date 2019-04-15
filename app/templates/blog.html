@@ -4,16 +4,16 @@
 
 {% if blog %}
 <h1> {{ blog.BlogTitle }} </h1>
-<p>Auther: <a href="{{ url_for('users', user_id=blog.PublisherID) }}">{{auther}}</a></p>
+<p>Auther: <a href="{{ url_for('users', user_id=blog.PublisherID) }}">{{auther}}</a>&nbsp;&nbsp;Category: {{categories}}&nbsp;&nbsp;Label: {{labels}}</p>
 <p> {{ blog.BlogContent }} </p>
 {% endif %}
 
-<font size="4"><a href="javascript:;" {% if is_like_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_blog(this)">Likes</a>: <div id="blog"  style="display:inline;">{{num_likes}}</div>&nbsp;&nbsp;Views: {{blog.PageViews}}</font>
+<font size="4">{% if current_user.is_authenticated %}<a href="javascript:;" {% if is_like_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_blog(this)">Likes</a>{% else %}Likes{% endif %}: <div id="blog"  style="display:inline;">{{num_likes}}</div>&nbsp;&nbsp;Views: {{blog.PageViews}}&nbsp;&nbsp;<a href="javascript:;" {% if is_collect_blog %}style="color:red"{% else %}style="color:black"{% endif %} onclick="collect_blog(this)">Collect</a></font>
 <br><br>
 <font size="3"><a href="#" onclick="reply({{0}})">Publish Comment</a></font>
 
 <h2> Comments: </h2> 
-{% if comment_form %}
+{% if current_user.is_authenticated and comment_form %}
 <div id="comment" style="display:block;">
     <form action="{{ url_for('comment', user_id=current_user.UserID, blog_id=blog.BlogID) }}" method="POST">
         {{ comment_form.hidden_tag() }}
@@ -28,11 +28,11 @@
     {% if root.children.__len__() != 0 %} <hr/> {% endif %}
     {% for child in root.children %}
         <p><a href="{{ url_for('users', user_id=child.comment.CommenterID) }}" style="color:#4499EE"> {{ child.name }} </a><br>
-        <font size="2">{{ child.comment.CommentDate }}<br><a href="javascript:;" {% if child.is_like %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_comment(this)" comment="{{child.comment.CommentID}}">likes</a>&nbsp;<nobr id="{{child.comment.CommentID}}">{{child.num_likes}}</nobr>&nbsp;&nbsp;{% if child.comment.CommenterID!=current_user.UserID %}<a href="#" onclick="reply({{child.comment.CommentID}})">reply</a>{% else %}<a href="{{url_for('delete_comment',comment_id=child.comment.CommentID)}}">delete</a>{% endif %}</font></p>
+        <font size="2">{{ child.comment.CommentDate }}<br>{% if current_user.is_authenticated %}<a href="javascript:;" {% if child.is_like %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_comment(this)" comment="{{child.comment.CommentID}}">likes</a>{% else %}likes{% endif %}&nbsp;<nobr id="{{child.comment.CommentID}}">{{child.num_likes}}</nobr>&nbsp;&nbsp;{% if current_user.is_authenticated %}{% if child.comment.CommenterID!=current_user.UserID %}<a href="#" onclick="reply({{child.comment.CommentID}})">reply</a>{% else %}<a href="{{url_for('delete_comment',comment_id=child.comment.CommentID)}}">delete</a>{% endif %}{% endif %}</font></p>
         <p> {{ child.comment.CommentContent }} </p>
         {% for c in child.children %}
             <p>&nbsp;&nbsp;&nbsp;&nbsp; <a href="{{ url_for('users', user_id=c.comment.CommenterID) }}" style="color:#4499EE"> {{ c.name }} </a><font size="2", style="color:#808080">reply {{c.father_name}}</font> : {{ c.comment.CommentContent }} <br>
-            &nbsp;&nbsp;&nbsp;&nbsp; <font size="2">{{ c.comment.CommentDate }}&nbsp;&nbsp; <a href="javascript:;" {% if c.is_like %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_comment(this)" comment="{{c.comment.CommentID}}">likes</a>&nbsp;<nobr id="{{c.comment.CommentID}}">{{c.num_likes}}</nobr>&nbsp;&nbsp;{% if c.comment.CommenterID!=current_user.UserID %}<a href="#" onclick="reply({{c.comment.CommentID}})">reply</a>{% else %}<a href="{{url_for('delete_comment',comment_id=c.comment.CommentID)}}">delete</a>{% endif %}</font></p>
+            &nbsp;&nbsp;&nbsp;&nbsp; <font size="2">{{ c.comment.CommentDate }}&nbsp;&nbsp; {% if current_user.is_authenticated %}<a href="javascript:;" {% if c.is_like %}style="color:red"{% else %}style="color:black"{% endif %} onclick="like_comment(this)" comment="{{c.comment.CommentID}}">likes</a>{% else %}likes{% endif %}&nbsp;<nobr id="{{c.comment.CommentID}}">{{c.num_likes}}</nobr>&nbsp;&nbsp;{% if current_user.is_authenticated %}{% if c.comment.CommenterID!=current_user.UserID %}<a href="#" onclick="reply({{c.comment.CommentID}})">reply</a>{% else %}<a href="{{url_for('delete_comment',comment_id=c.comment.CommentID)}}">delete</a>{% endif %}{% endif %}</font></p>
         {% endfor %}
         <hr />
     {% endfor %}
@@ -70,6 +70,24 @@ function like_blog(element){
             if(data=="success"){
                 target = document.getElementById("blog");
                 target.innerHTML=parseInt(target.innerHTML)+1;
+                element.style = "color:red";
+            }
+        });
+    }
+}
+function collect_blog(element){
+    if (element.style.color == "red"){
+        $.get("/blog/uncollect/{{blog.BlogID}}",function(data){
+            if(data=="success"){
+                target = document.getElementById("blog");
+                element.style = "color:black";
+            }
+        });
+    }
+    else{
+        $.get("/blog/collect/{{blog.BlogID}}",function(data){
+            if(data=="success"){
+                target = document.getElementById("blog");
                 element.style = "color:red";
             }
         });

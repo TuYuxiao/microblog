@@ -3,15 +3,23 @@
 {% block content %}
 
 {% if not current_user.is_authenticated %}
-<h1>Hi</h1>
+<h1>Welcome to MicroBlog</h1>
 {% else %}
 <h1>Welcome back, {{ current_user.UserName }}!</h1>
-{% if blog %}
-<h2>Recent blogs you are following:</h2>
-<hr/>
-{% endif %}
 {% endif %}
 
+<a href="/index/random">View Random Blogs</a>
+{% if random %}
+  <h2>Some random blogs:</h2>
+{% else %}
+  {% if not current_user.is_authenticated %}
+    <h2>Some hottest blogs:</h2>
+  {% else %}
+    <h2>Recent blogs you are following:</h2>
+  {% endif %}
+{% endif %}
+
+<hr/>
 {% for blog,auther,comments,likes in infos %}
     <a href="{{ url_for('blog', blog_id=blog.BlogID) }}" style="color:#ff0000;">{{ blog.BlogTitle }}</a>
     <p style="color:#ff6600;">{{ blog.BlogContent[:100]+"..." }}</p>

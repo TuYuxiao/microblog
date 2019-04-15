@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import TextField, BooleanField, PasswordField, TextAreaField, SubmitField, FileField, SelectField, IntegerField, SelectMultipleField
+from wtforms import TextField, BooleanField, PasswordField, TextAreaField, SubmitField, IntegerField
 from wtforms.validators import Required, Email, Length, EqualTo, NumberRange
 
 class LoginForm(FlaskForm):
@@ -8,10 +8,6 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember_me', default=False)
     submit = SubmitField('Log in')
     
-class UploadForm(FlaskForm):
-    img = FileField(validators=[Required()])
-    submit = SubmitField(u'上传')
-
 class SignUpForm(FlaskForm):
     user_name = TextField('user name', validators=[
         Required(), Length(max=20)])
@@ -42,7 +38,3 @@ class PublishBlogForm(FlaskForm):
     #category = SelectMultipleField('category', choices=[])
     submit = SubmitField('Submit')
     
-class NameForm(FlaskForm):
-    name = TextAreaField('file name', validators=[Required()])
-    submit = SubmitField('create')
-

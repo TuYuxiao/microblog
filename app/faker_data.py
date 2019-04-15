@@ -6,7 +6,7 @@ Created on Sat Apr  6 23:49:33 2019
 @author: tuyuxiao
 """
 
-from app.models import User,Follow,Category,Blog,Comment,BlogLabel,BlogCategory,BlogLike,CommentLike
+from app.models import User,Follow,Category,Blog,Comment,BlogLabel,BlogCategory,BlogLike,CommentLike,Collection
 
 def generateData(numUser,numCategory,numBlog):
     User.fake(numUser)
@@ -26,3 +26,5 @@ def generateData(numUser,numCategory,numBlog):
     BlogLike.fake(numBlog*3,numUser,numBlog)
     
     CommentLike.fake(numBlog*10,numUser,numBlog*8)
+    
+    Collection.fake(numBlog*5,numUser,numBlog)

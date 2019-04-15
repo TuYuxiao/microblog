@@ -70,6 +70,7 @@ end$
 create trigger blog_delete before delete on Blog
 for each row 
 begin
+  DELETE FROM Collection WHERE BlogID = old.BlogID;
   DELETE FROM BlogLike WHERE BlogID = old.BlogID;
   DELETE FROM BlogLabel WHERE BlogID = old.BlogID;
   DELETE FROM BlogCategory WHERE BlogID = old.BlogID; 	

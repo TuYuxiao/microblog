@@ -14,7 +14,7 @@ from subprocess import Popen,PIPE
 import math
 
 class SQLAlchemy:
-    TABLES = ['Blog','BlogCategory','BlogLabel','BlogLike','Category','Comment','CommentLike','Follow','User']
+    TABLES = ['Blog','BlogCategory','BlogLabel','BlogLike','Category','Comment','Collection','CommentLike','Follow','User']
     def __init__(self, app):
         self.app = app
         config = self.app.config.get('SQLALCHEMY_DATABASE_URI')
@@ -260,6 +260,8 @@ class Query:
         self.suffix += " OFFSET "+str(n)+" "
         return self
     def paginate(self, page, per_page,**kwargs):
+        temp = self.suffix
+        self.suffix = ""
         if len(kwargs.keys())>0:
             total = self.filter_by(count=True,**kwargs)
         else:
@@ -271,6 +273,7 @@ class Query:
             page = total_page
         if page < 1:
             page = total_page
+        self.suffix = temp
         self.limit(per_page)
         self.offset((page-1)*per_page)
         if len(kwargs.keys())>0:
@@ -278,6 +281,26 @@ class Query:
         else:
             res = self.all()
         return Pagination(res, page, total_page)
+    def paginate_in(self, page, per_page, name, values,**kwargs):
+        temp = self.suffix
+        self.suffix = ""
+        cond = ""
+        for key,val in kwargs.items():
+            cond += key + " = '" + str(val) + "' AND "
+        total = self.execute("SELECT COUNT(*) FROM "+self.tableName+" WHERE "+cond+name+" IN ("+str(values)[1:-1]+")")[0][0]
+        if total == 0:
+            return Pagination([], 0, 0)
+        total_page = math.ceil(total/per_page)
+        if page > total_page:
+            page = total_page
+        if page < 1:
+            page = total_page
+        self.suffix = temp
+        self.limit(per_page)
+        self.offset((page-1)*per_page)
+        res = self.execute("SELECT * FROM "+self.tableName+" WHERE "+cond+name+" IN ("+str(values)[1:-1]+")")
+        return Pagination([self.model(*args) for args in res], page, total_page)
+        
     def order_by(self, name, desc=False):
         self.suffix += " ORDER BY "+name+" "
         if desc:

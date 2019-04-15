@@ -100,3 +100,14 @@ CREATE TABLE IF NOT EXISTS CommentLike
   FOREIGN KEY (UserID) REFERENCES User(UserID),
   FOREIGN KEY (CommentID) REFERENCES Comment(CommentID)
 ) character set = utf8;
+
+CREATE TABLE IF NOT EXISTS Collection
+(
+  UserID INT NOT NULL,
+  BlogID INT NOT NULL,
+  CollectTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (UserID, BlogID),
+  FOREIGN KEY (UserID) REFERENCES User(UserID),
+  FOREIGN KEY (BlogID) REFERENCES Blog(BlogID)
+) character set = utf8;
+
