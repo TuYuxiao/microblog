@@ -40,7 +40,7 @@ class User(UserMixin, db.Model):
     def fake(num):
         for i in range(num):
             user = User(UserName=faker.name(),UserPasswd=hashlib.md5('123456'.encode()).hexdigest(),
-                        UserEmail=faker.email(),UserSelfDescription=faker.paragraph(),
+                        UserEmail=faker.email(),UserSelfDescription=faker.paragraph(),UserAge=randint(10,70),
                         RegistrationTime=faker.date_time_this_year())
             db.session.add(user)
         db.session.commit()
@@ -59,7 +59,7 @@ class Blog(db.Model):
         for i in range(num):
             blog = Blog(BlogTitle=faker.sentence()[:30],BlogContent=faker.paragraph(80),
                         PublisherID=randint(1,numUser+1),
-                        PublishDate=faker.date_time_this_month())
+                        PublishDate=faker.date_time_this_month(),PageViews=randint(0,80))
             db.session.add(blog)
         db.session.commit()
 

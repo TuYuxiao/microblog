@@ -14,7 +14,7 @@ from subprocess import Popen,PIPE
 import math
 
 class SQLAlchemy:
-    TABLES = ['Blog','BlogCategory','BlogLabel','BlogLike','Category','Comment','Collection','CommentLike','Follow','User']
+    TABLES = ['Blog','BlogCategory','BlogLabel','BlogLike','Category','Collection','Comment','CommentLike','Follow','User']
     def __init__(self, app):
         self.app = app
         config = self.app.config.get('SQLALCHEMY_DATABASE_URI')
@@ -25,7 +25,6 @@ class SQLAlchemy:
             print("Fail to connect database!")
             print(e)
             os._exit(0)
-        #self.createTableIfNotExist()
         self.Model = self._inner_model_define()
         self.session = Session(self.db)
          
@@ -60,14 +59,14 @@ class SQLAlchemy:
             self.executeSQLPopen('create_triggers.sql')
         except Exception as e:
             print(e)        
-    def createTableIfNotExist(self):
+    def isTableExist(self):
         try:
             cursor = self.db.cursor()
             cursor.execute("SHOW TABLES")
-            if sorted([table[0] for table in cursor.fetchall()]) != self.TABLES:
-                self.createTable()
+            return sorted([table[0] for table in cursor.fetchall()]) == self.TABLES
         except Exception as e:
             print(e)
+            return False
         
     def __del__(self):
         self.db.close()

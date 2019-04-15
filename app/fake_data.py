@@ -23,8 +23,8 @@ def generateData(numUser,numCategory,numBlog):
     
     BlogLabel.fake(numBlog)
     
-    BlogLike.fake(numBlog*3,numUser,numBlog)
+    BlogLike.fake(numBlog*20,numUser,numBlog)
     
-    CommentLike.fake(numBlog*10,numUser,numBlog*8)
+    CommentLike.fake(numBlog*30,numUser,numBlog*8)
     
-    Collection.fake(numBlog*5,numUser,numBlog)
+    Collection.fake(numBlog*10,numUser,numBlog)

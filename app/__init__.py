@@ -16,8 +16,10 @@ app.config.from_object(Config)
 
 lm = LoginManager(app)
 db = SQLAlchemy(app)
-#db.createTable()
-from app.faker_data import generateData
-#generateData(20,5,40)
+if not db.isTableExist():
+    db.createTable()
+    from app.fake_data import generateData
+    generateData(100,5,1000)
+
 
 from app import routes
