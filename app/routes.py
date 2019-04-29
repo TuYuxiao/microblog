@@ -9,9 +9,9 @@ Created on Fri Apr  5 22:15:56 2019
 import datetime,os
 from app import app,db,lm
 from flask import render_template, flash, redirect, url_for, request
-from flask.ext.login import login_user, logout_user, current_user, login_required
+from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User,Follow,Category,Blog,Comment,BlogLabel,BlogCategory,BlogLike,CommentLike,Collection
-from .forms import LoginForm,SignUpForm,AboutMeForm,PublishBlogForm,CommentForm,AgeForm
+from .forms import LoginForm,SignUpForm,AboutMeForm,PublishBlogForm,CommentForm,AgeForm,PasswdForm
 from numpy.random import randint
 
 PER_PAGE = 5
@@ -334,6 +334,28 @@ def about_me(user_id):
         else:
             flash("Sorry, May be your data have some error.")
     return redirect(url_for("users", user_id=user_id))
+
+@app.route('/user/passwd/<int:user_id>', methods=["POST", "GET"])
+@login_required
+def change_passwd(user_id):
+    if user_id != current_user.UserID:
+        flash("Sorry, you can only edit your info!", "error")
+        return redirect("/index")
+    form = PasswdForm()
+    if form.validate_on_submit():
+        user = User.query.get(user_id)
+        if not user.check_passwd(request.form.get('old_password')):
+            flash("Wrong password!")
+            #return redirect(url_for("change_passwd", user_id=user_id))
+
+        else:
+            flash('Change password successful!')
+            user.UserPasswd = User.md5(request.form.get('password'))
+            return redirect(url_for("users", user_id=user_id))
+
+    return render_template(
+        "passwd.html",
+        form=form)
 
 @app.route('/user/age/<int:user_id>', methods=["POST", "GET"])
 @login_required

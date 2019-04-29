@@ -26,6 +26,12 @@ class AgeForm(FlaskForm):
     age = IntegerField(validators=[Required(),NumberRange(0,100,'age should be 0-100')])
     submit = SubmitField('YES!')
 
+class PasswdForm(FlaskForm):
+    old_password = PasswordField('old_password', validators=[Required()])
+    password = PasswordField('password', validators=[Required(),EqualTo('password2',message='Passwords must match!')])
+    password2 = PasswordField('Confirm password', validators=[Required()])
+    submit = SubmitField("OK")
+
 class CommentForm(FlaskForm):
     content= TextAreaField('content', validators=[
         Required(), Length(max=300)])

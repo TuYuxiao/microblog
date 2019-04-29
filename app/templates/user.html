@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>Name: {{ user.UserName }} {% if current_user.is_authenticated and user.UserID != current_user.UserID %} &nbsp;&nbsp;&nbsp; <font size=2>{% if is_follow %}<a href="javascript:;" style="color:red" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% else %}<a href="javascript:;" style="color:black" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% endif %}</font> {% endif %}</p>
+<p>Name: {{ user.UserName }} {% if current_user.is_authenticated and user.UserID == current_user.UserID %}&nbsp;&nbsp;&nbsp;<font size=2><a href="{{url_for('change_passwd',user_id=current_user.UserID)}}">change passwd</a></font>{% endif %}{% if current_user.is_authenticated and user.UserID != current_user.UserID %} &nbsp;&nbsp;&nbsp; <font size=2>{% if is_follow %}<a href="javascript:;" style="color:red" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% else %}<a href="javascript:;" style="color:black" onclick="follow(this)" user="{{user.UserID}}">[FOLLOW]</a>{% endif %}</font> {% endif %}</p>
 <p>Email: {{ user.UserEmail }}</p>
 
 {% if current_user.is_authenticated and user.UserID == current_user.UserID %}

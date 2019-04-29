@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Change Password</h1>
+<form action="/user/passwd/{{current_user.UserID}}" method="post" name="change_passwd">
+   {{ form.hidden_tag() }}
+   <p>Old Password: {{ form.old_password }}</p>
+   {% for error in form.errors.old_password %}
+   <p style="color:red;">[-] {{ error }}</p>
+   {% endfor %}
+   
+   <p>New Password:{{form.password}}</p>
+    {% for error in form.errors.password %}
+    <p style="color:red;">[-] {{ error }}</p>
+    {% endfor %}
+	
+    <p>Conform Password:{{form.password2}}</p>
+    {% for error in form.errors.password2 %}
+    <p style="color:red;">[-] {{ error }}</p>
+    {% endfor %}
+
+   <p>{{ form.submit }}</p>
+
+</form>
+{% endblock %}
