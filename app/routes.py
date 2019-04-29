@@ -682,7 +682,7 @@ def delete_category(category_id):
 def collection(page):
     blogs = BlogCategory.query.execute("SELECT BlogID FROM Collection WHERE UserID="+str(current_user.UserID))
     pagination = Blog.query.order_by('PublishDate',desc=True).paginate_in(page, 
-                                        PER_PAGE, "BlogID", [blog[0] for blog in blogs],PublisherID = current_user.UserID)
+                                        PER_PAGE, "BlogID", [blog[0] for blog in blogs])
     items = []
     for blog in pagination.items:
         comments = Comment.query.filter_by(BlogID=blog.BlogID,count=True)
